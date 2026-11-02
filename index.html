@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number Guessing Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f3f4f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 16px;
+      overflow-x: hidden;
+      position: relative;
+    }
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 50;
+    }
+    .game-card {
+      background: white;
+      padding: 32px 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      max-width: 460px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+      z-index: 10;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    h1 {
+      margin: 0;
+      color: #1f2937;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-sound {
+      background: none;
+      border: 1px solid #e5e7eb;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      color: #4b5563;
+      padding: 0;
+      transition: background-color 0.2s;
+    }
+    .btn-sound:hover {
+      background-color: #f3f4f6;
+    }
+    .difficulty-group {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin: 14px 0 16px;
+    }
+    .btn-diff {
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      color: #4b5563;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-diff.active {
+      background-color: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+    p {
+      color: #4b5563;
+      font-size: 15px;
+      line-height: 1.5;
+      margin: 8px 0;
+    }
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: 20px;
+    }
+    .attempts-badge {
+      background-color: #e0e7ff;
+      color: #3730a3;
+    }
+    .best-badge {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .input-group {
+      margin: 20px 0 16px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+    input[type="number"] {
+      padding: 10px 14px;
+      font-size: 16px;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      width: 120px;
+      text-align: center;
+      outline: none;
+    }
+    input[type="number"]:focus {
+      border-color: #2563eb;
+    }
+    input[type="number"]:disabled {
+      background-color: #f3f4f6;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      background-color: #2563eb;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background-color: #1d4ed8;
+    }
+    .btn-primary:disabled {
+      background-color: #9ca3af;
+      cursor: not-allowed;
+    }
+    .proximity-indicator {
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 8px;
+      min-height: 20px;
+    }
+    .message {
+      font-size: 16px;
+      font-weight: 500;
+      min-height: 24px;
+      margin-top: 10px;
+      color: #374151;
+    }
+    .history-section {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+      text-align: left;
+    }
+    .history-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #6b7280;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 32px;
+      align-items: center;
+    }
+    .history-empty {
+      font-size: 13px;
+      color: #9ca3af;
+      font-style: italic;
+    }
+    .history-pill {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .history-pill.low {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .history-pill.high {
+      background-color: #ffedd5;
+      color: #9a3412;
+    }
+    .history-pill.correct {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+    .btn-reset {
+      margin-top: 20px;
+      background-color: #10b981;
+      display: none;
+    }
+    .btn-reset:hover {
+      background-color: #059669;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="game-card">
+    <div class="top-bar">
+      <h1>🎯 Guess the Number</h1>
+      <button id="soundToggle" class="btn-sound" title="Toggle Sound">🔊</button>
+    </div>
+
+    <!-- Difficulty selector buttons -->
+    <div class="difficulty-group">
+      <button class="btn-diff" data-max="50" id="diffEasy">Easy (1–50)</button>
+      <button class="btn-diff active" data-max="100" id="diffMed">Medium (1–100)</button>
+      <button class="btn-diff" data-max="500" id="diffHard">Hard (1–500)</button>
+    </div>
+
+    <p id="rangePrompt">I'm thinking of a number between <strong>1 and 100</strong>.</p>
+    
+    <div class="stats-row">
+      <div class="badge attempts-badge" id="attemptsBadge">Attempts: 0</div>
+      <div class="badge best-badge" id="bestBadge">Best: —</div>
+    </div>
+    
+    <div class="input-group">
+      <input type="number" id="guessInput" min="1" max="100" placeholder="e.g. 50">
+      <button id="guessBtn" class="btn-primary">Guess</button>
+    </div>
+    
+    <div class="proximity-indicator" id="proximity"></div>
+    <div class="message" id="message">Pick a difficulty and guess to start!</div>
+
+    <div class="history-section">
+      <div class="history-title">Previous Guesses</div>
+      <div class="history-list" id="historyList">
+        <span class="history-empty">No guesses yet</span>
+      </div>
+    </div>
+
+    <button id="resetBtn" class="btn-primary btn-reset">Play Again 🔄</button>
+  </div>
+
+  <script>
+    // 1. Audio System (Synthesized with Web Audio API)
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playTone(freq, type, duration, gainLevel = 0.1) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(gainLevel, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    function playWinSound() {
+      if (!soundEnabled) return;
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 triumphant chime
+      notes.forEach((freq, idx) => {
+        setTimeout(() => {
+          playTone(freq, 'triangle', 0.35, 0.12);
+        }, idx * 110);
+      });
+    }
+
+    function playHintSound(isHot) {
+      if (!soundEnabled) return;
+      if (isHot) {
+        playTone(600, 'sine', 0.12, 0.08);
+      } else {
+        playTone(280, 'sine', 0.15, 0.08);
+      }
+    }
+
+    // 2. Confetti Particle System
+    const canvas = document.getElementById('confettiCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let animationId = null;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function triggerConfetti() {
+      particles = [];
+      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+      for (let i = 0; i < 90; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height * 0.45,
+          vx: (Math.random() - 0.5) * 14,
+          vy: (Math.random() - 0.7) * 16,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotationSpeed: (Math.random() - 0.5) * 10,
+          opacity: 1
+        });
+      }
+
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      renderConfetti();
+    }
+
+    function renderConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.35; // gravity
+        p.rotation += p.rotationSpeed;
+        p.opacity -= 0.012; // fade out
+
+        if (p.opacity > 0) {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.globalAlpha = Math.max(0, p.opacity);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+        }
+      });
+
+      particles = particles.filter((p) => p.opacity > 0 && p.y < canvas.height);
+      if (particles.length > 0) {
+        animationId = requestAnimationFrame(renderConfetti);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        animationId = null;
+      }
+    }
+
+    // 3. Game State variables
+    let maxRange = 100;
+    let secretNumber = Math.floor(Math.random() * maxRange) + 1;
+    let attempts = 0;
+    let bestScore = null;
+    const previousGuesses = [];
+
+    // 4. Element references
+    const guessInput = document.getElementById('guessInput');
+    const guessBtn = document.getElementById('guessBtn');
+    const message = document.getElementById('message');
+    const proximity = document.getElementById('proximity');
+    const rangePrompt = document.getElementById('rangePrompt');
+    const attemptsBadge = document.getElementById('attemptsBadge');
+    const bestBadge = document.getElementById('bestBadge');
+    const historyList = document.getElementById('historyList');
+    const resetBtn = document.getElementById('resetBtn');
+    const diffButtons = document.querySelectorAll('.btn-diff');
+    const soundToggle = document.getElementById('soundToggle');
+
+    // 5. Storage helper for difficulty-specific high scores
+    function getStorageKey() {
+      return `guessGameBestScore_${maxRange}`;
+    }
+
+    function loadBestScore() {
+      bestScore = null;
+      try {
+        const saved = localStorage.getItem(getStorageKey());
+        if (saved !== null) {
+          bestScore = Number(saved);
+          bestBadge.textContent = `Best: ${bestScore}`;
+          return;
+        }
+      } catch (e) {
+        console.warn('localStorage inaccessible:', e);
+      }
+      bestBadge.textContent = 'Best: —';
+    }
+
+    // 6. Proximity calculation (Hot/Cold feedback)
+    function getProximityFeedback(difference) {
+      const percentageDiff = (difference / maxRange) * 100;
+      if (percentageDiff <= 3) {
+        return { text: '🔥 Boiling hot! You are super close!', color: '#dc2626', isHot: true };
+      } else if (percentageDiff <= 8) {
+        return { text: '🌡️ Warm! Very close now.', color: '#ea580c', isHot: true };
+      } else if (percentageDiff <= 20) {
+        return { text: '🌤️ Lukewarm.', color: '#d97706', isHot: false };
+      } else {
+        return { text: '❄️ Cold! You are quite far off.', color: '#0284c7', isHot: false };
+      }
+    }
+
+    // 7. Helper to update visual history list
+    function addGuessToHistory(guess, hintType, hintText) {
+      if (previousGuesses.length === 1) {
+        historyList.innerHTML = '';
+      }
+      const pill = document.createElement('span');
+      pill.className = `history-pill ${hintType}`;
+      pill.textContent = `${guess} ${hintText}`;
+      historyList.appendChild(pill);
+    }
+
+    // 8. Define what happens when the player guesses
+    function checkGuess() {
+      const userGuess = Number(guessInput.value);
+
+      if (!userGuess || userGuess < 1 || userGuess > maxRange) {
+        message.textContent = `Please enter a valid number between 1 and ${maxRange}.`;
+        message.style.color = '#dc2626';
+        proximity.textContent = '';
+        return;
+      }
+
+      // Check for duplicate guess
+      if (previousGuesses.includes(userGuess)) {
+        message.textContent = `You already tried ${userGuess}! Try a different number.`;
+        message.style.color = '#7c3aed';
+        guessInput.value = '';
+        guessInput.focus();
+        return;
+      }
+
+      // Record guess and increment attempt counter
+      previousGuesses.push(userGuess);
+      attempts++;
+      attemptsBadge.textContent = 'Attempts: ' + attempts;
+
+      const difference = Math.abs(userGuess - secretNumber);
+
+      if (userGuess === secretNumber) {
+        let victoryText = `🎉 Correct! You found ${secretNumber} in ${attempts} ${attempts === 1 ? 'try' : 'tries'}!`;
+        proximity.textContent = '🏆 Bullseye!';
+        proximity.style.color = '#16a34a';
+
+        // Play celebration audio and confetti
+        playWinSound();
+        triggerConfetti();
+
+        // Check for new best score on current difficulty
+        if (bestScore === null || attempts < bestScore) {
+          bestScore = attempts;
+          bestBadge.textContent = `Best: ${bestScore}`;
+          victoryText += ' 🏆 New Personal Best!';
+          try {
+            localStorage.setItem(getStorageKey(), bestScore.toString());
+          } catch (e) {
+            console.warn('Could not save best score:', e);
+          }
+        }
+
+        message.textContent = victoryText;
+        message.style.color = '#16a34a';
+        addGuessToHistory(userGuess, 'correct', '🎯');
+        
+        // End the round
+        guessInput.disabled = true;
+        guessBtn.disabled = true;
+        resetBtn.style.display = 'inline-block';
+        resetBtn.focus();
+      } else {
+        const prox = getProximityFeedback(difference);
+        proximity.textContent = prox.text;
+        proximity.style.color = prox.color;
+        playHintSound(prox.isHot);
+
+        if (userGuess < secretNumber) {
+          message.textContent = '📉 Too low! Try a higher number.';
+          message.style.color = '#d97706';
+          addGuessToHistory(userGuess, 'low', '▲');
+        } else {
+          message.textContent = '📈 Too high! Try a lower number.';
+          message.style.color = '#d97706';
+          addGuessToHistory(userGuess, 'high', '▼');
+        }
+      }
+
+      guessInput.value = '';
+      if (!guessInput.disabled) {
+        guessInput.focus();
+      }
+    }
+
+    // 9. Reset the game for a new round
+    function resetGame() {
+      secretNumber = Math.floor(Math.random() * maxRange) + 1;
+      attempts = 0;
+      previousGuesses.length = 0;
+      attemptsBadge.textContent = 'Attempts: 0';
+      historyList.innerHTML = '<span class="history-empty">No guesses yet</span>';
+      proximity.textContent = '';
+      message.textContent = `New round! Guess a number between 1 and ${maxRange}.`;
+      message.style.color = '#374151';
+      guessInput.disabled = false;
+      guessBtn.disabled = false;
+      resetBtn.style.display = 'none';
+      guessInput.max = maxRange;
+      guessInput.placeholder = `e.g. ${Math.round(maxRange / 2)}`;
+      guessInput.value = '';
+      guessInput.focus();
+    }
+
+    // 10. Handle difficulty button clicks
+    diffButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        diffButtons.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        maxRange = Number(btn.dataset.max);
+        rangePrompt.innerHTML = `I'm thinking of a number between <strong>1 and ${maxRange}</strong>.`;
+        loadBestScore();
+        resetGame();
+      });
+    });
+
+    // 11. Sound toggle handler
+    soundToggle.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+      soundToggle.title = soundEnabled ? 'Mute Sound' : 'Enable Sound';
+    });
+
+    // 12. Initial setup
+    loadBestScore();
+    guessBtn.addEventListener('click', () => {
+      initAudio();
+      checkGuess();
+    });
+    guessInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        initAudio();
+        checkGuess();
+      }
+    });
+    resetBtn.addEventListener('click', resetGame);
+  </script>
+</body>
+</html>
